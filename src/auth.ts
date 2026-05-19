@@ -10,19 +10,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        token: { label: "Token", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email) return null;
 
         try {
-          const res = await fetch(`${API_URL}/v1/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
-          });
+          let res;
+          // Opsi A: Login instan via token refresh (Untuk auto-login dari daftar akun)
+          if (credentials.token) {
+            res = await fetch(`${API_URL}/v1/auth/refresh`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                refresh_token: credentials.token,
+              }),
+            });
+          } else if (credentials.password) {
+            // Opsi B: Login via email & password biasa
+            res = await fetch(`${API_URL}/v1/auth/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: credentials.email,
+                password: credentials.password,
+              }),
+            });
+          } else {
+            return null;
+          }
 
           const json = await res.json();
 
@@ -48,7 +64,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async jwt({ token, user }) {
-      // Saat login pertama — simpan data dari authorize()
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -61,7 +76,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token }) {
-      // Kirim data ke client-side session
       session.user.id = token.id as string;
       session.user.name = token.name as string;
       session.user.role = token.role as string;
