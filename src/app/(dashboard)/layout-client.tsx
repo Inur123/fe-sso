@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { usePathname, useRouter } from "next/navigation";
@@ -58,10 +58,16 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({
   children,
-  session,
+  session: initialSession,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: clientSession } = useSession();
+  
+  // Menggunakan clientSession (NextAuth hook) agar reaktif 100% real-time,
+  // dengan fallback ke initialSession (server-side prop) untuk menghindari flicker/delay.
+  const session = clientSession || initialSession;
+
   const [avatarUrl, setAvatarUrl] = useState(session?.user?.image ?? "");
   const [avatarKey, setAvatarKey] = useState(0);
   const { isMobile, setOpenMobile } = useSidebar();
@@ -97,7 +103,6 @@ export default function DashboardSidebar({
     return () => window.removeEventListener("avatar-updated", handler);
   }, []);
 
-  // session?.user?.image = instant fallback (dari NextAuth cookie, tidak perlu fetch BE)
   const displayAvatar =
     resolveAvatar(avatarUrl) || resolveAvatar(session?.user?.image ?? "") || "";
   const isAdmin = session?.user?.role === "superadmin";
@@ -336,7 +341,7 @@ export default function DashboardSidebar({
           <Separator orientation="vertical" className="mr-1 h-4" />
           <Badge
             variant="outline"
-            className="capitalize border-emerald-500/20 text-emerald-800 bg-emerald-50/50 dark:text-emerald-300 dark:bg-emerald-950/20 font-medium"
+            className="capitalize border-emerald-500/20 text-emerald-800 bg-emerald-50/50 dark:text-emerald-305 dark:bg-emerald-950/20 font-medium"
           >
             {session?.user?.role ?? "user"}
           </Badge>

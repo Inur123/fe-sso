@@ -87,7 +87,7 @@ async function getCroppedImg(
 }
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -159,6 +159,7 @@ export default function ProfilePage() {
     setImageToCrop(objectUrl);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
+    setCroppedAreaPixels(null);
     setCropperOpen(true);
     if (e.target) e.target.value = "";
   }
@@ -192,12 +193,14 @@ export default function ProfilePage() {
     if (!session?.accessToken) return;
     setSaving(true);
     try {
+      let currentAvatarUrl = avatarUrl;
       if (selectedFile) {
         setUploading(true);
         const res: any = await api.user.uploadAvatar(
           session.accessToken,
           selectedFile,
         );
+        currentAvatarUrl = res.data.image;
         setAvatarUrl(res.data.image);
         setSelectedFile(null);
         setPreviewUrl("");
@@ -220,6 +223,40 @@ export default function ProfilePage() {
       const updated: any = await api.user.me(session.accessToken);
       setProfile(updated.data);
       setAvatarUrl(updated.data.image ?? "");
+
+      // 1. UPDATE NEXTAUTH SESSION COOKIE (Agar sidebar & layout terupdate instan)
+      if (updateSession) {
+        await updateSession({
+          ...session,
+          user: {
+            ...session?.user,
+            name: updated.data.name,
+            image: updated.data.image,
+          },
+        });
+      }
+
+      // 2. UPDATE LOCALSTORAGE SAVED ACCOUNTS (Agar daftar "Pilih Akun" di login terupdate instan)
+      const savedRaw = localStorage.getItem("sso_saved_accounts");
+      if (savedRaw) {
+        try {
+          let savedList = JSON.parse(savedRaw);
+          savedList = savedList.map((acc: any) => {
+            if (acc.email === updated.data.email) {
+              return {
+                ...acc,
+                name: updated.data.name,
+                image: updated.data.image || "",
+                role: updated.data.role || acc.role,
+              };
+            }
+            return acc;
+          });
+          localStorage.setItem("sso_saved_accounts", JSON.stringify(savedList));
+        } catch (errLocal) {
+          console.error("Gagal menyinkronkan riwayat login lokal", errLocal);
+        }
+      }
 
       // Beritahu sidebar untuk re-fetch avatar
       window.dispatchEvent(new CustomEvent("avatar-updated"));
@@ -248,7 +285,6 @@ export default function ProfilePage() {
         </div>
         <Skeleton className="h-px w-full" />
         <div className="grid grid-cols-2 gap-6 items-start">
-          {/* Kiri skeleton */}
           <div className="rounded-xl border p-6 space-y-4 flex flex-col items-center">
             <Skeleton className="h-5 w-32 rounded" />
             <Skeleton className="h-24 w-24 rounded-full" />
@@ -262,7 +298,6 @@ export default function ProfilePage() {
             </div>
             <Skeleton className="h-8 w-28 rounded" />
           </div>
-          {/* Kanan skeleton */}
           <div className="rounded-xl border p-6 space-y-6">
             <Skeleton className="h-5 w-28 rounded" />
             <div className="space-y-2">
@@ -376,7 +411,7 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            {/* Box ID Pengguna yang Premium */}
+            {/* Box ID Pengguna */}
             <div className="w-full pt-4 border-t border-slate-200/60 dark:border-zinc-800 mt-auto space-y-2">
               <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest text-center">
                 ID PENGGUNA

@@ -63,7 +63,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // 1. Saat pertama kali login (user terisi)
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -72,6 +73,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
       }
+      
+      // 2. Saat dipicu panggilan client-side updateSession()
+      if (trigger === "update" && session) {
+        console.log("🔥 [NEXTAUTH JWT CALLBACK] Triggger update detected with data:", session);
+        if (session.user) {
+          if (session.user.name !== undefined) token.name = session.user.name;
+          if (session.user.image !== undefined) token.image = session.user.image;
+          if (session.user.role !== undefined) token.role = session.user.role;
+        } else {
+          if (session.name !== undefined) token.name = session.name;
+          if (session.image !== undefined) token.image = session.image;
+          if (session.role !== undefined) token.role = session.role;
+        }
+      }
+      
       return token;
     },
 
