@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { KeyRound, Trash2, Eye, EyeOff } from "lucide-react";
+import { KeyRound, Trash2, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -34,10 +34,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+
+interface OAuthSession {
+  id: string;
+  expires_at: string;
+  refresh_token: string;
+  app?: {
+    id: string;
+    name: string;
+  };
+}
 
 // Deduplicate — keep only latest session per app
-function dedupeByApp(sessions: any[]): any[] {
-  const map = new Map<string, any>();
+function dedupeByApp(sessions: OAuthSession[]): OAuthSession[] {
+  const map = new Map<string, OAuthSession>();
   for (const sess of sessions) {
     const key = sess.app?.id ?? sess.id;
     const existing = map.get(key);
@@ -51,31 +70,85 @@ function dedupeByApp(sessions: any[]): any[] {
   return Array.from(map.values());
 }
 
-function TokenCell({ token }: { token: string }) {
-  const [visible, setVisible] = useState(false);
-  const truncated = token.length > 40 ? `${token.slice(0, 40)}...` : token;
+function TokenCell({ token, appName }: { token: string; appName: string }) {
+  const [copied, setCopied] = useState(false);
+  const truncated = token.length > 32 ? `${token.slice(0, 32)}...` : token;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(token);
+    setCopied(true);
+    toast.success("Token berhasil disalin");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="flex items-center gap-1.5">
-      <code className="text-xs text-muted-foreground font-mono max-w-[240px] truncate">
-        {visible ? token : truncated}
+      <code className="text-xs text-slate-500 dark:text-zinc-500 font-mono">
+        {truncated}
       </code>
-      <button
-        onClick={() => setVisible(!visible)}
-        className="text-muted-foreground hover:text-foreground flex-shrink-0"
-      >
-        {visible ? (
-          <EyeOff className="h-3.5 w-3.5" />
-        ) : (
-          <Eye className="h-3.5 w-3.5" />
-        )}
-      </button>
+      <Dialog>
+        <DialogTrigger
+          render={
+            <button
+              className="text-slate-400 hover:text-emerald-600 dark:text-zinc-500 dark:hover:text-emerald-400 transition-colors p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer shrink-0"
+              title="Tampilkan Token"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </button>
+          }
+        />
+        <DialogContent className="bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800/80 rounded-2xl max-w-sm">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-slate-900 dark:text-zinc-50 font-bold flex items-center gap-2">
+              <KeyRound className="size-5 text-emerald-500" />
+              Token Akses {appName && appName !== "—" ? appName : "Rahasia"}
+            </DialogTitle>
+
+            {/* Warning Box */}
+            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl p-3 text-red-800 dark:text-red-400 text-xs text-left leading-relaxed">
+              <span className="font-bold block mb-1">
+                ⚠️ PENTING: Jangan Bagikan Token Ini!
+              </span>
+              Ini adalah token rahasia yang memberikan hak akses penuh ke akun
+              Anda untuk aplikasi ini. Harap jaga kerahasiaannya dengan sangat
+              ketat.
+            </div>
+
+            {/* Token Value Container */}
+            <div className="text-left space-y-1.5">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">
+                Value Token
+              </span>
+              <div className="bg-slate-50 dark:bg-zinc-950/40 border border-slate-200 dark:border-zinc-800/80 rounded-xl p-3 font-mono text-xs break-all select-all text-slate-800 dark:text-zinc-200 flex flex-col gap-2">
+                <code className="leading-normal">{token}</code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopy}
+                  className="mt-1 h-8 w-full text-xs font-semibold rounded-lg border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-850 cursor-pointer"
+                >
+                  {copied ? "Tersalin!" : "Salin Token"}
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <DialogClose
+              className="w-full sm:w-auto rounded-xl border-slate-200 dark:border-zinc-800 cursor-pointer"
+              render={<Button variant="outline" />}
+            >
+              Tutup
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 export default function SessionsPage() {
   const { data: session } = useSession();
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<OAuthSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -84,7 +157,10 @@ export default function SessionsPage() {
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
+      const timer = setTimeout(() => {
+        setCurrentPage(totalPages);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [sessions, totalPages, currentPage]);
 
@@ -98,7 +174,10 @@ export default function SessionsPage() {
       headers: { Authorization: `Bearer ${session.accessToken}` },
     })
       .then((r) => r.json())
-      .then((res) => setSessions(dedupeByApp(res.data ?? [])))
+      .then((res) => {
+        const response = res as { data?: OAuthSession[] };
+        setSessions(dedupeByApp(response.data ?? []));
+      })
       .catch(() => toast.error("Gagal memuat sesi"))
       .finally(() => setLoading(false));
   }, [session]);
@@ -225,14 +304,22 @@ export default function SessionsPage() {
                       {sess.app?.name ?? "—"}
                     </TableCell>
                     <TableCell>
-                      <TokenCell token={sess.refresh_token ?? "—"} />
+                      <TokenCell
+                        token={sess.refresh_token ?? "—"}
+                        appName={sess.app?.name ?? "—"}
+                      />
                     </TableCell>
                     <TableCell className="text-sm text-slate-600 dark:text-zinc-400 whitespace-nowrap font-medium">
-                      {new Date(sess.expires_at).toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
+                      {new Date(sess.expires_at)
+                        .toLocaleString("id-ID", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })
+                        .replace(",", "")}
                     </TableCell>
                     <TableCell>
                       <AlertDialog>

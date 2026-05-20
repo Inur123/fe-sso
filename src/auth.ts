@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { type User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -68,10 +68,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.name = user.name;
-        token.role = (user as any).role;
+        token.role = (user as User).role;
         token.image = user.image;
-        token.accessToken = (user as any).accessToken;
-        token.refreshToken = (user as any).refreshToken;
+        token.accessToken = (user as User).accessToken;
+        token.refreshToken = (user as User).refreshToken;
       }
       
       // 2. Saat dipicu panggilan client-side updateSession()
@@ -96,7 +96,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.name = token.name as string;
       session.user.role = token.role as string;
       session.user.image = token.image as string;
-      (session as any).accessToken = token.accessToken;
+      session.accessToken = token.accessToken;
       return session;
     },
   },

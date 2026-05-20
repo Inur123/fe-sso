@@ -25,6 +25,22 @@ import {
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { api } from "@/lib/api";
 
+const PasswordToggle = ({
+  show,
+  toggle,
+}: {
+  show: boolean;
+  toggle: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={toggle}
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+  >
+    {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+  </button>
+);
+
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -70,28 +86,13 @@ export default function RegisterPage() {
       await api.auth.register(payload);
       setIsSuccess(true);
       toast.success("Registrasi berhasil! Silakan periksa email Anda.");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal membuat akun");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal membuat akun");
     } finally {
       setLoading(false);
     }
   }
-
-  const PasswordToggle = ({
-    show,
-    toggle,
-  }: {
-    show: boolean;
-    toggle: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={toggle}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-    >
-      {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-    </button>
-  );
 
   if (isSuccess) {
     return (

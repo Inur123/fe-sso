@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ interface SavedAccount {
 }
 
 function LoginInner() {
-  const { data: session, status: authStatus } = useSession();
+  const { status: authStatus } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
@@ -42,7 +43,7 @@ function LoginInner() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
   function resolveAvatar(url: string) {
     if (!url) return "";
@@ -56,7 +57,7 @@ function LoginInner() {
       console.log("User already authenticated, bypassing login screen.");
       if (callbackUrl) {
         if (callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")) {
-          window.location.href = callbackUrl;
+          window.location.assign(callbackUrl);
         } else {
           router.push(callbackUrl);
           router.refresh();
@@ -75,8 +76,10 @@ function LoginInner() {
       try {
         const parsed = JSON.parse(saved) as SavedAccount[];
         if (parsed.length > 0) {
-          setSavedAccounts(parsed);
-          setView("select-account"); // Otomatis ke pilih akun jika ada riwayat
+          setTimeout(() => {
+            setSavedAccounts(parsed);
+            setView("select-account"); // Otomatis ke pilih akun jika ada riwayat
+          }, 0);
         }
       } catch (e) {
         console.error("Gagal memuat riwayat akun", e);
@@ -117,8 +120,8 @@ function LoginInner() {
       const loggedUser = checkJson.data.user;
       const refreshToken = checkJson.data.refresh_token;
       const savedRaw = localStorage.getItem("sso_saved_accounts");
-      let savedList = savedRaw ? JSON.parse(savedRaw) : [];
-      savedList = savedList.filter((acc: any) => acc.email !== email); // Hapus duplikat
+      let savedList: SavedAccount[] = savedRaw ? JSON.parse(savedRaw) : [];
+      savedList = savedList.filter((acc: SavedAccount) => acc.email !== email); // Hapus duplikat
       savedList.unshift({
         id: loggedUser.id,
         name: loggedUser.name,
@@ -145,7 +148,7 @@ function LoginInner() {
         toast.success("Login berhasil!");
         if (callbackUrl) {
           if (callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")) {
-            window.location.href = callbackUrl;
+            window.location.assign(callbackUrl);
           } else {
             router.push(callbackUrl);
             router.refresh();
@@ -155,7 +158,7 @@ function LoginInner() {
           router.refresh();
         }
       }
-    } catch (err: any) {
+    } catch {
       toast.error("Terjadi kesalahan koneksi sistem");
       setLoading(false);
     }
@@ -192,7 +195,7 @@ function LoginInner() {
         toast.success(`Selamat datang kembali, ${acc.name}!`);
         if (callbackUrl) {
           if (callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")) {
-            window.location.href = callbackUrl;
+            window.location.assign(callbackUrl);
           } else {
             router.push(callbackUrl);
             router.refresh();
@@ -202,7 +205,7 @@ function LoginInner() {
           router.refresh();
         }
       }
-    } catch (err) {
+    } catch {
       setEmail(acc.email);
       setPassword("");
       setView("login");
@@ -252,13 +255,16 @@ function LoginInner() {
                   className="w-full flex items-center gap-3.5 p-3 rounded-xl border border-slate-200/60 bg-white hover:bg-slate-50 hover:border-emerald-500/20 active:scale-[0.99] transition-all text-left cursor-pointer group shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
                 >
                   {/* Avatar */}
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-emerald-500 bg-emerald-50 shadow-inner flex items-center justify-center">
                       {displayAvatar ? (
-                        <img
+                        <Image
                           src={displayAvatar}
                           alt={acc.name}
+                          width={44}
+                          height={44}
                           className="w-full h-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <span className="text-emerald-700 font-extrabold text-base">
@@ -284,7 +290,7 @@ function LoginInner() {
                   </div>
 
                   {/* Icon Panah / Loading */}
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     {loading ? (
                       <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
                     ) : (

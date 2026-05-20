@@ -43,11 +43,23 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+interface AppDetail {
+  id: string;
+  name: string;
+  description?: string;
+  redirect_uris: string[];
+  client_id: string;
+  status: string;
+  is_active: boolean;
+  owner_id: string;
+  created_at: string;
+}
+
 export default function AppDetailPage() {
   const { data: session } = useSession();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [app, setApp] = useState<any>(null);
+  const [app, setApp] = useState<AppDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [newSecret, setNewSecret] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
@@ -63,12 +75,13 @@ export default function AppDetailPage() {
     if (!session?.accessToken || !id) return;
     api.apps
       .get(session.accessToken, id)
-      .then((res: any) => {
-        setApp(res.data);
+      .then((res) => {
+        const response = res as { data: AppDetail };
+        setApp(response.data);
         setForm({
-          name: res.data.name,
-          description: res.data.description ?? "",
-          redirect_uris: (res.data.redirect_uris ?? [])[0] ?? "",
+          name: response.data.name,
+          description: response.data.description ?? "",
+          redirect_uris: (response.data.redirect_uris ?? [])[0] ?? "",
         });
       })
       .catch(() => toast.error("Gagal memuat detail aplikasi"))
@@ -89,15 +102,19 @@ export default function AppDetailPage() {
         redirect_uris: updatedUris,
       });
       // Update app state realtime — no refresh needed
-      setApp((prev: any) => ({
-        ...prev,
-        name: form.name,
-        description: form.description,
-        redirect_uris: updatedUris,
-      }));
+      setApp((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          name: form.name,
+          description: form.description,
+          redirect_uris: updatedUris,
+        };
+      });
       toast.success("Aplikasi berhasil diperbarui!");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal update");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal update");
     } finally {
       setSaving(false);
     }
@@ -118,11 +135,14 @@ export default function AppDetailPage() {
     if (!session?.accessToken) return;
     setRegenerating(true);
     try {
-      const res: any = await api.apps.regenerateSecret(session.accessToken, id);
+      const res = (await api.apps.regenerateSecret(session.accessToken, id)) as {
+        data: { client_secret: string };
+      };
       setNewSecret(res.data.client_secret);
       toast.success("Client secret baru berhasil dibuat!");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal regenerate");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal regenerate");
     } finally {
       setRegenerating(false);
     }
@@ -134,8 +154,9 @@ export default function AppDetailPage() {
       await api.apps.delete(session.accessToken, id);
       toast.success("Aplikasi dihapus");
       router.push("/apps");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal menghapus");
     }
   }
 
@@ -143,13 +164,19 @@ export default function AppDetailPage() {
     if (!session?.accessToken) return;
     setToggling(true);
     try {
-      const res: any = await api.apps.toggleActive(session.accessToken, id);
-      setApp((prev: any) => ({ ...prev, is_active: res.data.is_active }));
+      const res = (await api.apps.toggleActive(session.accessToken, id)) as {
+        data: { is_active: boolean };
+      };
+      setApp((prev) => {
+        if (!prev) return null;
+        return { ...prev, is_active: res.data.is_active };
+      });
       toast.success(
         `Aplikasi berhasil ${res.data.is_active ? "diaktifkan" : "dinonaktifkan"}`,
       );
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengubah status");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal mengubah status");
     } finally {
       setToggling(false);
     }

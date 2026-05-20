@@ -8,19 +8,28 @@ export const metadata: Metadata = {
   title: "Kelola Aplikasi",
 };
 
+interface AdminApp {
+  id: string;
+  name: string;
+  client_id: string;
+  status: string;
+  is_active: boolean;
+  description?: string;
+}
+
 export default async function AdminAppsPage() {
   const session = await auth();
   if (!session) redirect("/login");
   if (session.user.role !== "superadmin") redirect("/dashboard");
 
-  let pendingApps: any[] = [];
-  let allApps: any[] = [];
+  let pendingApps: AdminApp[] = [];
+  let allApps: AdminApp[] = [];
 
   try {
-    const [pendingRes, allRes]: any[] = await Promise.all([
+    const [pendingRes, allRes] = (await Promise.all([
       api.admin.apps.pending(session.accessToken),
       api.admin.apps.list(session.accessToken),
-    ]);
+    ])) as [{ data: AdminApp[] }, { data: AdminApp[] }];
     pendingApps = pendingRes.data ?? [];
     allApps = allRes.data ?? [];
   } catch {}

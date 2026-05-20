@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,36 +20,29 @@ function VerifyEmailContent() {
     "loading",
   );
   const [message, setMessage] = useState("Sedang memverifikasi email Anda...");
-  const [token, setToken] = useState<string | null>(null);
-  const [hasInitiated, setHasInitiated] = useState(false);
+  const hasInitiated = useRef(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      setToken(params.get("token"));
-    }
-  }, []);
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tok = params.get("token");
 
-  useEffect(() => {
-    if (token === null && typeof window !== "undefined") {
-      // Tunggu hydration selesai membaca window.location.search
+    if (!tok) {
+      setTimeout(() => {
+        setStatus("error");
+        setMessage("Token verifikasi tidak valid atau tidak ditemukan.");
+      }, 0);
       return;
     }
 
-    if (!token) {
-      setStatus("error");
-      setMessage("Token verifikasi tidak valid atau tidak ditemukan.");
-      return;
-    }
+    if (hasInitiated.current) return;
+    hasInitiated.current = true;
 
-    if (hasInitiated) return;
-    setHasInitiated(true);
-
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
     fetch(`${API_URL}/v1/auth/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token: tok }),
     })
       .then(async (res) => {
         const json = await res.json();
@@ -70,7 +63,7 @@ function VerifyEmailContent() {
         setMessage("Terjadi kesalahan koneksi sistem.");
         toast.error("Kesalahan jaringan.");
       });
-  }, [token, hasInitiated]);
+  }, [hasInitiated]);
 
   return (
     <Card className="border-emerald-500/20 shadow-md">

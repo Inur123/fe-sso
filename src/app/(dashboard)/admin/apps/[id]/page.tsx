@@ -42,19 +42,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const statusVariant: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  pending: "secondary",
-  verified: "default",
-  rejected: "destructive",
-};
-const statusLabel: Record<string, string> = {
-  pending: "Menunggu Persetujuan",
-  verified: "Terverifikasi",
-  rejected: "Ditolak",
-};
+interface AppDetail {
+  id: string;
+  name: string;
+  description?: string;
+  redirect_uris: string[];
+  client_id: string;
+  owner_id: string;
+  status: string;
+  is_active: boolean;
+  created_at: string;
+}
 
 function formatDate(raw: string) {
   if (!raw) return "-";
@@ -71,7 +69,7 @@ export default function AdminAppDetailPage() {
   const { data: session } = useSession();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [app, setApp] = useState<any>(null);
+  const [app, setApp] = useState<AppDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -90,17 +88,18 @@ export default function AdminAppDetailPage() {
     }
     api.admin.apps
       .get(session.accessToken, id)
-      .then((res: any) => {
-        setApp(res.data);
+      .then((res) => {
+        const response = res as { data: AppDetail };
+        setApp(response.data);
         setForm({
-          name: res.data.name,
-          description: res.data.description ?? "",
-          redirect_uris: (res.data.redirect_uris ?? [])[0] ?? "",
+          name: response.data.name,
+          description: response.data.description ?? "",
+          redirect_uris: (response.data.redirect_uris ?? [])[0] ?? "",
         });
       })
       .catch(() => toast.error("Gagal memuat detail aplikasi"))
       .finally(() => setLoading(false));
-  }, [session, id]);
+  }, [session, id, router]);
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -110,20 +109,24 @@ export default function AdminAppDetailPage() {
       const updatedUris = form.redirect_uris.trim()
         ? [form.redirect_uris.trim()]
         : [];
-      const res: any = await api.admin.apps.update(session.accessToken, id, {
+      await api.admin.apps.update(session.accessToken, id, {
         name: form.name,
         description: form.description,
         redirect_uris: updatedUris,
       });
-      setApp((prev: any) => ({
-        ...prev,
-        name: form.name,
-        description: form.description,
-        redirect_uris: updatedUris,
-      }));
+      setApp((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          name: form.name,
+          description: form.description,
+          redirect_uris: updatedUris,
+        };
+      });
       toast.success("Aplikasi berhasil diperbarui!");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal update");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal update");
     } finally {
       setSaving(false);
     }
@@ -133,16 +136,20 @@ export default function AdminAppDetailPage() {
     if (!session?.accessToken) return;
     setToggling(true);
     try {
-      const res: any = await api.admin.apps.toggleActive(
+      const res = (await api.admin.apps.toggleActive(
         session.accessToken,
         id,
-      );
-      setApp((prev: any) => ({ ...prev, is_active: res.data.is_active }));
+      )) as { data: { is_active: boolean } };
+      setApp((prev) => {
+        if (!prev) return null;
+        return { ...prev, is_active: res.data.is_active };
+      });
       toast.success(
         `Aplikasi berhasil ${res.data.is_active ? "diaktifkan" : "dinonaktifkan"}`,
       );
-    } catch (err: any) {
-      toast.error(err.message || "Gagal toggle");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal toggle");
     } finally {
       setToggling(false);
     }
@@ -152,10 +159,14 @@ export default function AdminAppDetailPage() {
     if (!session?.accessToken) return;
     try {
       await api.admin.apps.approve(session.accessToken, id);
-      setApp((prev: any) => ({ ...prev, status: "verified" }));
+      setApp((prev) => {
+        if (!prev) return null;
+        return { ...prev, status: "verified" };
+      });
       toast.success("Aplikasi disetujui!");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal menyetujui");
     }
   }
 
@@ -163,10 +174,14 @@ export default function AdminAppDetailPage() {
     if (!session?.accessToken) return;
     try {
       await api.admin.apps.reject(session.accessToken, id);
-      setApp((prev: any) => ({ ...prev, status: "rejected" }));
+      setApp((prev) => {
+        if (!prev) return null;
+        return { ...prev, status: "rejected" };
+      });
       toast.warning("Aplikasi ditolak");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal menolak");
     }
   }
 

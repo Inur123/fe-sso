@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Image from "next/image";
 import { Menu, X, ArrowRight, UserCheck } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -37,9 +38,11 @@ export default function Header({
             className="flex items-center gap-3 group shrink-0 z-10"
           >
             {/* Logo web muncul langsung secara cerah, bagus, simpel & rapi */}
-            <img
+            <Image
               src="/logo-sso.png"
               alt="Logo SSO"
+              width={44}
+              height={44}
               className="h-10 w-10 sm:h-11 sm:w-11 object-contain group-hover:scale-105 transition-transform duration-300 filter drop-shadow-sm"
             />
             <div className="hidden xs:block">

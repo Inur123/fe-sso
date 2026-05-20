@@ -27,7 +27,7 @@ import {
 import { Loader2, Save, Camera, Copy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 import Cropper from "react-easy-crop";
 import {
@@ -86,9 +86,34 @@ async function getCroppedImg(
   });
 }
 
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  image?: string;
+  gender?: string;
+  phone?: string;
+  is_verified?: boolean;
+}
+
+interface Area {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface SavedAccount {
+  email: string;
+  name: string;
+  image?: string;
+  role?: string;
+}
+
 export default function ProfilePage() {
   const { data: session, update: updateSession } = useSession();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -101,7 +126,7 @@ export default function ProfilePage() {
   // Cropper states
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
 
@@ -113,12 +138,13 @@ export default function ProfilePage() {
     if (!session?.accessToken) return;
     api.user
       .me(session.accessToken)
-      .then((res: any) => {
+      .then((res) => {
+        const response = res as { data: UserProfile };
         console.log(
           "🔥 [FRONTEND DEBUG] PROFILE DATA FROM API /v1/user/me:",
-          res.data,
+          response.data,
         );
-        let rawPhone = res.data.phone ?? "";
+        let rawPhone = response.data.phone ?? "";
         if (rawPhone.startsWith("+62")) {
           rawPhone = rawPhone.substring(3);
         } else if (rawPhone.startsWith("62")) {
@@ -127,13 +153,13 @@ export default function ProfilePage() {
           rawPhone = rawPhone.substring(1);
         }
 
-        setProfile(res.data);
+        setProfile(response.data);
         setForm({
-          name: res.data.name ?? "",
-          gender: res.data.gender ?? "",
+          name: response.data.name ?? "",
+          gender: response.data.gender ?? "",
           phone: rawPhone,
         });
-        setAvatarUrl(res.data.image ?? "");
+        setAvatarUrl(response.data.image ?? "");
       })
       .catch((err) => {
         console.error("🔥 [FRONTEND DEBUG] FETCH PROFILE FAILED:", err);
@@ -164,7 +190,7 @@ export default function ProfilePage() {
     if (e.target) e.target.value = "";
   }
 
-  const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+  const onCropComplete = (_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   };
 
@@ -193,14 +219,12 @@ export default function ProfilePage() {
     if (!session?.accessToken) return;
     setSaving(true);
     try {
-      let currentAvatarUrl = avatarUrl;
       if (selectedFile) {
         setUploading(true);
-        const res: any = await api.user.uploadAvatar(
+        const res = (await api.user.uploadAvatar(
           session.accessToken,
           selectedFile,
-        );
-        currentAvatarUrl = res.data.image;
+        )) as { data: { image: string } };
         setAvatarUrl(res.data.image);
         setSelectedFile(null);
         setPreviewUrl("");
@@ -220,7 +244,7 @@ export default function ProfilePage() {
         phone: `+62${form.phone}`,
       });
       toast.success("Profil berhasil diperbarui!");
-      const updated: any = await api.user.me(session.accessToken);
+      const updated = (await api.user.me(session.accessToken)) as { data: UserProfile };
       setProfile(updated.data);
       setAvatarUrl(updated.data.image ?? "");
 
@@ -240,8 +264,8 @@ export default function ProfilePage() {
       const savedRaw = localStorage.getItem("sso_saved_accounts");
       if (savedRaw) {
         try {
-          let savedList = JSON.parse(savedRaw);
-          savedList = savedList.map((acc: any) => {
+          const savedList = JSON.parse(savedRaw) as SavedAccount[];
+          const updatedList = savedList.map((acc) => {
             if (acc.email === updated.data.email) {
               return {
                 ...acc,
@@ -252,7 +276,7 @@ export default function ProfilePage() {
             }
             return acc;
           });
-          localStorage.setItem("sso_saved_accounts", JSON.stringify(savedList));
+          localStorage.setItem("sso_saved_accounts", JSON.stringify(updatedList));
         } catch (errLocal) {
           console.error("Gagal menyinkronkan riwayat login lokal", errLocal);
         }
@@ -260,8 +284,9 @@ export default function ProfilePage() {
 
       // Beritahu sidebar untuk re-fetch avatar
       window.dispatchEvent(new CustomEvent("avatar-updated"));
-    } catch (err: any) {
-      toast.error(err.message || "Gagal update profil");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal update profil");
     } finally {
       setSaving(false);
       setUploading(false);

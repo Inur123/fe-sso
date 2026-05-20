@@ -1,6 +1,17 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import Image from "next/image";
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  image?: string;
+  gender?: string;
+  is_verified: boolean;
+}
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -30,9 +41,9 @@ export default async function DashboardPage() {
     return `${API_URL}${url}`;
   }
 
-  let profile: any = null;
+  let profile: UserProfile | null = null;
   try {
-    const res: any = await api.user.me(session.accessToken);
+    const res = (await api.user.me(session.accessToken)) as { data: UserProfile };
     profile = res.data;
   } catch {}
 
@@ -91,12 +102,15 @@ export default async function DashboardPage() {
         <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pb-6">
           <div className="h-16 w-16 rounded-full overflow-hidden bg-slate-50 dark:bg-zinc-800 flex items-center justify-center font-bold text-xl border border-slate-200 dark:border-zinc-700 ring-4 ring-emerald-500/10 dark:ring-emerald-400/10 shrink-0">
             {profile?.image || session.user.image ? (
-              <img
+              <Image
                 src={resolveAvatarUrl(
                   profile?.image ?? session.user.image ?? "",
                 )}
                 alt={name}
+                width={64}
+                height={64}
                 className="size-full object-cover"
+                unoptimized
               />
             ) : (
               <span className="text-slate-700 dark:text-zinc-300">

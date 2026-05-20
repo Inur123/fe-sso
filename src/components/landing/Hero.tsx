@@ -23,7 +23,7 @@ export default function Hero({ isLoggedIn, handleScrollToSection }: HeroProps) {
         {/* Heading */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.1] text-slate-900">
           Satu Akses Terintegrasi
-          <span className="block mt-2 bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-700">
+          <span className="block mt-2 bg-clip-text text-transparent bg-linear-to-r from-emerald-600 via-teal-500 to-emerald-700">
             Pelajar NU Magetan
           </span>
         </h1>

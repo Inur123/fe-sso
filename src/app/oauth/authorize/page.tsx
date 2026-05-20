@@ -4,20 +4,24 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { toast } from "sonner";
+import Image from "next/image";
+
+interface OauthApp {
+  name: string;
+}
 import {
   Card,
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CheckCircle, XCircle, ShieldCheck, Loader2 } from "lucide-react";
 
 function OAuthConsentInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useSearchParams();
-  const [app, setApp] = useState<any>(null);
+  const [app, setApp] = useState<OauthApp | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -44,8 +48,9 @@ function OAuthConsentInner() {
     })
       .then((r) => r.json())
       .then((res) => {
-        if (res.success && res.data?.image) {
-          setAvatarUrl(res.data.image);
+        const response = res as { success: boolean; data?: { image: string } };
+        if (response.success && response.data?.image) {
+          setAvatarUrl(response.data.image);
         }
       })
       .catch(() => {});
@@ -68,15 +73,16 @@ function OAuthConsentInner() {
     )
       .then((r) => r.json())
       .then((res) => {
-        if (res.success) {
-          setApp(res.data?.app);
+        const response = res as { success: boolean; data?: { app: OauthApp }; message?: string };
+        if (response.success) {
+          setApp(response.data?.app ?? null);
         } else {
-          setError(res.message ?? "Aplikasi tidak ditemukan");
+          setError(response.message ?? "Aplikasi tidak ditemukan");
         }
       })
       .catch(() => setError("Gagal memuat data aplikasi"))
       .finally(() => setLoading(false));
-  }, [session, status, clientId, API_URL]);
+  }, [session, status, clientId, API_URL, redirectUri, scope, state, router]);
 
   async function handleDecision(allow: boolean) {
     if (!session?.accessToken) return;
@@ -111,7 +117,7 @@ function OAuthConsentInner() {
       } else {
         window.location.href = `${redirectUri}?error=access_denied&state=${state}`;
       }
-    } catch (err) {
+    } catch {
       toast.error("Terjadi kesalahan koneksi");
       setProcessing(false);
     }
@@ -131,7 +137,7 @@ function OAuthConsentInner() {
     return (
       <div className="relative min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4 overflow-x-hidden font-sans selection:bg-emerald-100 selection:text-slate-900">
         {/* Canvas background pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-75 pointer-events-none z-0" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-size-[4rem_4rem] opacity-75 pointer-events-none z-0" />
         
         {/* Pastel mesh glowing orbs */}
         <div className="absolute top-[-5%] left-[-5%] w-[45%] h-[45%] rounded-full bg-emerald-200/35 blur-[120px] pointer-events-none z-0 animate-pulse" />
@@ -190,7 +196,7 @@ function OAuthConsentInner() {
   return (
     <div className="relative min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4 overflow-x-hidden font-sans selection:bg-emerald-100 selection:text-slate-900">
       {/* Canvas background pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-75 pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-size-[4rem_4rem] opacity-75 pointer-events-none z-0" />
       
       {/* Ambient glowing pastel mesh orbs */}
       <div className="absolute top-[-5%] left-[-5%] w-[45%] h-[45%] rounded-full bg-emerald-200/35 blur-[120px] pointer-events-none z-0 animate-pulse" />
@@ -207,9 +213,11 @@ function OAuthConsentInner() {
 
           <div className="flex flex-col items-center">
             {/* Brand Logo */}
-            <img
+            <Image
               src="/logo-sso.png"
               alt="Logo SSO"
+              width={56}
+              height={56}
               className="h-14 w-14 object-contain filter drop-shadow-sm mb-2"
             />
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -226,14 +234,17 @@ function OAuthConsentInner() {
           <div className="flex flex-col items-center text-center space-y-4 pt-2">
             <div className="relative group">
               {/* Glowing soft backdrop behind avatar */}
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-[8px] group-hover:scale-105 transition-transform duration-300" />
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-sm group-hover:scale-105 transition-transform duration-300" />
 
               <div className="relative w-24 h-24 rounded-full overflow-hidden border-[3px] border-emerald-500 bg-emerald-50 shadow-inner flex items-center justify-center">
                 {displayAvatar ? (
-                  <img
+                  <Image
                     src={displayAvatar}
-                    alt={session?.user?.name}
+                    alt={session?.user?.name ?? "User avatar"}
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
+                    unoptimized
                   />
                 ) : (
                   <span className="text-3xl font-bold text-emerald-600">

@@ -36,6 +36,18 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
+interface UserDetail {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  is_active: boolean;
+  is_verified: boolean;
+  image?: string;
+  created_at: string;
+}
+
 export default function AdminUsersPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -47,7 +59,7 @@ export default function AdminUsersPage() {
     return `${API_URL}${url}`;
   }
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserDetail[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,7 +101,10 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
+      const timer = setTimeout(() => {
+        setCurrentPage(totalPages);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [filteredUsers, totalPages, currentPage]);
 
@@ -106,8 +121,9 @@ export default function AdminUsersPage() {
     }
     api.admin.users
       .list(session.accessToken)
-      .then((res: any) => {
-        let rawUsers = res.data ?? [];
+      .then((res) => {
+        const response = res as { data: UserDetail[] };
+        const rawUsers = response.data ?? [];
         setUsers(rawUsers);
       })
       .catch(() => toast.error("Gagal memuat user"))

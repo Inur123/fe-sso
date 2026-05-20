@@ -13,7 +13,7 @@ export default function CTA({ isLoggedIn }: CTAProps) {
   return (
     <section className="py-16 sm:py-20 bg-transparent relative z-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
-        <h2 className="text-2xl sm:text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
           Siap Memasuki Ekosistem Digital?
         </h2>
         <p className="max-w-lg mx-auto text-slate-555 text-xs sm:text-sm md:text-base font-medium">

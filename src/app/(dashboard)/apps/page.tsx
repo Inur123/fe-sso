@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -38,10 +38,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface DeveloperApp {
+  id: string;
+  name: string;
+  description?: string;
+  client_id: string;
+  status: string;
+  is_active: boolean;
+}
+
 export default function AppsPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [apps, setApps] = useState<any[]>([]);
+  const [apps, setApps] = useState<DeveloperApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,7 +90,10 @@ export default function AppsPage() {
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
+      const timer = setTimeout(() => {
+        setCurrentPage(totalPages);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [filteredApps, totalPages, currentPage]);
 
@@ -89,40 +101,46 @@ export default function AppsPage() {
     document.title = "Aplikasi Saya | SSO IPNU-IPPNU Magetan";
   }, []);
 
-  useEffect(() => {
-    loadApps();
-  }, [session]);
-
-  async function loadApps() {
+  const loadApps = useCallback(async () => {
     if (!session?.accessToken) return;
     try {
-      const res: any = await api.apps.list(session.accessToken);
+      const res = (await api.apps.list(session.accessToken)) as {
+        data: DeveloperApp[];
+      };
       setApps(res.data ?? []);
     } catch {
     } finally {
       setLoading(false);
     }
-  }
+  }, [session]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadApps();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [session, loadApps]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!session?.accessToken) return;
     setCreating(true);
     try {
-      const res: any = await api.apps.create(session.accessToken, {
+      const res = (await api.apps.create(session.accessToken, {
         name: form.name,
         description: form.description,
         redirect_uris: form.redirect_uris.trim()
           ? [form.redirect_uris.trim()]
           : [],
         logo_url: form.logo_url,
-      });
+      })) as { data: { client_secret: string } };
       setNewSecret(res.data.client_secret);
-      setApps((prev) => [...prev, res.data]);
+      setApps((prev) => [...prev, res.data as unknown as DeveloperApp]);
       setForm({ name: "", description: "", redirect_uris: "", logo_url: "" });
       toast.success("Aplikasi berhasil didaftarkan!");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mendaftar aplikasi");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal mendaftar aplikasi");
     } finally {
       setCreating(false);
     }
@@ -314,7 +332,7 @@ export default function AppsPage() {
               Belum ada aplikasi terdaftar
             </p>
             <p className="text-sm text-slate-500 dark:text-zinc-400">
-              Klik "Daftar Aplikasi Baru" untuk memulai integrasi.
+              Klik &quot;Daftar Aplikasi Baru&quot; untuk memulai integrasi.
             </p>
           </CardContent>
         </Card>

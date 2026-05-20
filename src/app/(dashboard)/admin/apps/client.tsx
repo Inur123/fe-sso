@@ -33,32 +33,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const statusVariant: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  pending: "secondary",
-  verified: "default",
-  rejected: "destructive",
-};
-const statusLabel: Record<string, string> = {
-  pending: "Menunggu",
-  verified: "Terverifikasi",
-  rejected: "Ditolak",
-};
+interface AdminApp {
+  id: string;
+  name: string;
+  client_id: string;
+  status: string;
+  is_active: boolean;
+  description?: string;
+  redirect_uris?: string[];
+}
 
 export default function AdminAppsClient({
   pendingApps: initialPending,
   allApps: initialAll,
   token,
 }: {
-  pendingApps: any[];
-  allApps: any[];
+  pendingApps: AdminApp[];
+  allApps: AdminApp[];
   token: string;
 }) {
   const router = useRouter();
-  const [pending, setPending] = useState(initialPending);
-  const [all, setAll] = useState(initialAll);
+  const [pending, setPending] = useState<AdminApp[]>(initialPending);
+  const [all, setAll] = useState<AdminApp[]>(initialAll);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -86,7 +82,10 @@ export default function AdminAppsClient({
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
+      const timer = setTimeout(() => {
+        setCurrentPage(totalPages);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [filteredAll, totalPages, currentPage]);
 
@@ -103,8 +102,9 @@ export default function AdminAppsClient({
         a.map((app) => (app.id === id ? { ...app, status: "verified" } : app)),
       );
       toast.success("Aplikasi disetujui");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal menyetujui");
     }
   }
 
@@ -116,8 +116,9 @@ export default function AdminAppsClient({
         a.map((app) => (app.id === id ? { ...app, status: "rejected" } : app)),
       );
       toast.warning("Aplikasi ditolak");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal menolak");
     }
   }
 

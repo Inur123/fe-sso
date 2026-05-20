@@ -6,7 +6,7 @@ export default function Security() {
   return (
     <section id="keamanan" className="py-20 bg-transparent relative z-10">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="bg-gradient-to-tr from-white to-slate-50/50 border border-slate-200/80 rounded-[36px] p-6 sm:p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-10 shadow-lg shadow-slate-100 relative overflow-hidden backdrop-blur-md">
+        <div className="bg-linear-to-tr from-white to-slate-50/50 border border-slate-200/80 rounded-[36px] p-6 sm:p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-10 shadow-lg shadow-slate-100 relative overflow-hidden backdrop-blur-md">
           {/* Glowing spot */}
           <div className="absolute bottom-0 right-0 w-[30%] h-[30%] bg-emerald-500/5 blur-[50px] pointer-events-none" />
 

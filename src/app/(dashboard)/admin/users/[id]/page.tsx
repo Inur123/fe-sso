@@ -58,11 +58,23 @@ function formatDate(raw: string) {
   });
 }
 
+interface UserDetail {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  is_active: boolean;
+  is_verified: boolean;
+  image?: string;
+  created_at: string;
+}
+
 export default function AdminUserDetailPage() {
   const { data: session } = useSession();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -77,8 +89,9 @@ export default function AdminUserDetailPage() {
     }
     api.admin.users
       .get(session.accessToken, id)
-      .then((res: any) => {
-        setUser(res.data);
+      .then((res) => {
+        const response = res as { data: UserDetail };
+        setUser(response.data);
       })
       .catch(() => toast.error("Gagal memuat detail user"))
       .finally(() => setLoading(false));
@@ -89,30 +102,32 @@ export default function AdminUserDetailPage() {
     setUpdating(true);
     try {
       await api.admin.users.updateRole(session.accessToken, id, role);
-      setUser((prev: any) => ({ ...prev, role }));
+      setUser((prev) => (prev ? { ...prev, role } : null));
       toast.success(`Role diubah menjadi ${roleLabel[role]}`);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal mengubah role");
     } finally {
       setUpdating(false);
     }
   }
 
   async function handleToggleActive() {
-    if (!session?.accessToken) return;
+    if (!session?.accessToken || !user) return;
     setToggling(true);
     try {
       if (user.is_active) {
         await api.admin.users.deactivate(session.accessToken, id);
-        setUser((prev: any) => ({ ...prev, is_active: false }));
+        setUser((prev) => (prev ? { ...prev, is_active: false } : null));
         toast.success("User berhasil dinonaktifkan");
       } else {
         await api.admin.users.activate(session.accessToken, id);
-        setUser((prev: any) => ({ ...prev, is_active: true }));
+        setUser((prev) => (prev ? { ...prev, is_active: true } : null));
         toast.success("User berhasil diaktifkan");
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal mengubah status aktif");
     } finally {
       setToggling(false);
     }
@@ -125,10 +140,11 @@ export default function AdminUserDetailPage() {
     setVerifying(true);
     try {
       await api.admin.users.verifyEmail(session.accessToken, id);
-      setUser((prev: any) => ({ ...prev, is_verified: true }));
+      setUser((prev) => (prev ? { ...prev, is_verified: true } : null));
       toast.success("Email user berhasil diverifikasi!");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal memverifikasi email");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal memverifikasi email");
     } finally {
       setVerifying(false);
     }
@@ -141,8 +157,9 @@ export default function AdminUserDetailPage() {
       await api.admin.users.delete(session.accessToken, id);
       toast.success("User berhasil dihapus");
       router.push("/admin/users");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Gagal menghapus user");
     } finally {
       setDeleting(false);
     }
