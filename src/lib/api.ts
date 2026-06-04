@@ -64,6 +64,15 @@ export const api = {
         method: "POST",
         body: { refresh_token: refreshToken },
       }),
+
+    forgotPassword: (data: { email: string }) =>
+      request("/v1/auth/forgot-password", { method: "POST", body: data }),
+
+    resetPassword: (data: {
+      token: string;
+      password: string;
+      confirm_password: string;
+    }) => request("/v1/auth/reset-password", { method: "POST", body: data }),
   },
 
   user: {
@@ -83,6 +92,16 @@ export const api = {
         body: form,
       });
     },
+
+    changePassword: (
+      token: string,
+      data: { old_password?: string; new_password?: string },
+    ) =>
+      request("/v1/user/change-password", {
+        token,
+        method: "POST",
+        body: data,
+      }),
   },
 
   apps: {

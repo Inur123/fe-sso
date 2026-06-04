@@ -7,7 +7,9 @@ export default auth((req) => {
 
   const isAuthPage = nextUrl.pathname.startsWith("/login") ||
     nextUrl.pathname.startsWith("/register") ||
-    nextUrl.pathname.startsWith("/verify-email");
+    nextUrl.pathname.startsWith("/verify-email") ||
+    nextUrl.pathname.startsWith("/forgot-password") ||
+    nextUrl.pathname.startsWith("/reset-password");
 
   const isPublicPath = nextUrl.pathname.startsWith("/api/auth") ||
     nextUrl.pathname === "/" ||

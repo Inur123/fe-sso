@@ -25,6 +25,7 @@ import {
   Users,
   KeyRound,
   MoreHorizontal,
+  Lock,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +56,7 @@ const navItems = [
   { href: "/apps", label: "Aplikasi Saya", icon: AppWindow },
   { href: "/sessions", label: "Sesi Aktif", icon: KeyRound },
   { href: "/profile", label: "Profil", icon: User },
+  { href: "/security", label: "Keamanan", icon: Lock },
 ];
 
 const adminItems = [

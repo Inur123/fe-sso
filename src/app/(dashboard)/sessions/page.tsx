@@ -47,6 +47,7 @@ import {
 interface OAuthSession {
   id: string;
   expires_at: string;
+  created_at: string;
   refresh_token: string;
   app?: {
     id: string;
@@ -62,7 +63,7 @@ function dedupeByApp(sessions: OAuthSession[]): OAuthSession[] {
     const existing = map.get(key);
     if (
       !existing ||
-      new Date(sess.expires_at) > new Date(existing.expires_at)
+      new Date(sess.created_at) > new Date(existing.created_at)
     ) {
       map.set(key, sess);
     }
@@ -310,7 +311,7 @@ export default function SessionsPage() {
                       />
                     </TableCell>
                     <TableCell className="text-sm text-slate-600 dark:text-zinc-400 whitespace-nowrap font-medium">
-                      {new Date(sess.expires_at)
+                      {new Date(sess.created_at)
                         .toLocaleString("id-ID", {
                           day: "2-digit",
                           month: "2-digit",
