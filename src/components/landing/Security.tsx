@@ -19,7 +19,11 @@ export default function Security() {
               Standar Otorisasi & Privasi Aman
             </h3>
             <p className="text-slate-550 text-xs sm:text-sm md:text-base leading-relaxed">
-              Platform ini dibangun sepenuhnya di atas protokol otentikasi **OAuth 2.0 standar industri**, yang menjamin kredensial password Kakak tidak akan pernah dibagikan ke aplikasi klien lainnya. Aplikasi ekosistem hanya memperoleh otorisasi akses data publik yang sah setelah Kakak memberikan persetujuan eksplisit.
+              Platform ini dibangun sepenuhnya di atas protokol otentikasi
+              **OAuth 2.0 standar industri**, yang menjamin kredensial password
+              anda tidak akan pernah dibagikan ke aplikasi klien lainnya.
+              Aplikasi ekosistem hanya memperoleh otorisasi akses data publik
+              yang sah setelah anda memberikan persetujuan eksplisit.
             </p>
             <div className="pt-2 flex flex-wrap gap-2.5 justify-center md:justify-start">
               <span className="text-[9px] sm:text-[10px] font-bold bg-slate-100 border border-slate-200/60 text-slate-600 px-3 py-1 rounded-full uppercase select-none">

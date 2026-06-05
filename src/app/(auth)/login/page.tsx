@@ -35,7 +35,7 @@ function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
-  
+
   const [view, setView] = useState<"login" | "select-account">("login");
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +56,10 @@ function LoginInner() {
     if (authStatus === "authenticated") {
       console.log("User already authenticated, bypassing login screen.");
       if (callbackUrl) {
-        if (callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")) {
+        if (
+          callbackUrl.startsWith("http://") ||
+          callbackUrl.startsWith("https://")
+        ) {
           window.location.assign(callbackUrl);
         } else {
           router.push(callbackUrl);
@@ -131,7 +134,10 @@ function LoginInner() {
         refreshToken: refreshToken, // Token rahasia untuk auto-login instan
         lastLogin: new Date().getTime(),
       });
-      localStorage.setItem("sso_saved_accounts", JSON.stringify(savedList.slice(0, 5)));
+      localStorage.setItem(
+        "sso_saved_accounts",
+        JSON.stringify(savedList.slice(0, 5)),
+      );
 
       // 3. Panggil NextAuth signIn untuk menyimpan session cookie
       const res = await signIn("credentials", {
@@ -147,7 +153,10 @@ function LoginInner() {
       } else {
         toast.success("Login berhasil!");
         if (callbackUrl) {
-          if (callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")) {
+          if (
+            callbackUrl.startsWith("http://") ||
+            callbackUrl.startsWith("https://")
+          ) {
             window.location.assign(callbackUrl);
           } else {
             router.push(callbackUrl);
@@ -189,12 +198,15 @@ function LoginInner() {
         setEmail(acc.email);
         setPassword("");
         setView("login");
-        toast.error("Sesi masuk kedaluwarsa. Silakan ketik password Kakak.");
+        toast.error("Sesi masuk kedaluwarsa. Silakan ketik password anda.");
       } else {
         // Berhasil login instan secara ajaib!
         toast.success(`Selamat datang kembali, ${acc.name}!`);
         if (callbackUrl) {
-          if (callbackUrl.startsWith("http://") || callbackUrl.startsWith("https://")) {
+          if (
+            callbackUrl.startsWith("http://") ||
+            callbackUrl.startsWith("https://")
+          ) {
             window.location.assign(callbackUrl);
           } else {
             router.push(callbackUrl);
@@ -238,7 +250,7 @@ function LoginInner() {
             Pilih Akun
           </CardTitle>
           <CardDescription className="text-sm text-slate-500">
-            Pilih salah satu akun Pelajar NU Magetan Kakak
+            Pilih salah satu akun Pelajar NU Magetan anda
           </CardDescription>
         </CardHeader>
 
@@ -333,7 +345,7 @@ function LoginInner() {
           Masuk ke Akun
         </CardTitle>
         <CardDescription className="text-sm text-slate-500">
-          Gunakan akun SSO IPNU-IPPNU Magetan Kakak
+          Gunakan akun SSO IPNU-IPPNU Magetan anda
         </CardDescription>
       </CardHeader>
 
@@ -404,11 +416,7 @@ function LoginInner() {
           className="w-full h-10 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-semibold shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
           disabled={loading}
         >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            "Masuk"
-          )}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Masuk"}
         </Button>
 
         <div className="w-full flex flex-col items-center gap-2.5 pt-1">

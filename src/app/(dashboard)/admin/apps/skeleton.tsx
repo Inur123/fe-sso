@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
-export default function AdminAppsLoading() {
+export default function AdminAppsSkeleton() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">

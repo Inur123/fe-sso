@@ -130,6 +130,19 @@ export const api = {
 
     toggleActive: (token: string, id: string) =>
       request(`/v1/apps/${id}/toggle-active`, { token, method: "PUT" }),
+
+    getAccessList: (token: string, id: string) =>
+      request(`/v1/apps/${id}/access`, { token }),
+
+    searchUserAccess: (token: string, id: string, query: string) =>
+      request(`/v1/apps/${id}/access/search?query=${encodeURIComponent(query)}`, { token }),
+
+    updateAccessList: (token: string, id: string, userIds: string[]) =>
+      request(`/v1/apps/${id}/access`, {
+        token,
+        method: "POST",
+        body: { user_ids: userIds },
+      }),
   },
 
   admin: {

@@ -9,10 +9,7 @@ import Image from "next/image";
 interface OauthApp {
   name: string;
 }
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, ShieldCheck, Loader2 } from "lucide-react";
@@ -73,7 +70,11 @@ function OAuthConsentInner() {
     )
       .then((r) => r.json())
       .then((res) => {
-        const response = res as { success: boolean; data?: { app: OauthApp }; message?: string };
+        const response = res as {
+          success: boolean;
+          data?: { app: OauthApp };
+          message?: string;
+        };
         if (response.success) {
           setApp(response.data?.app ?? null);
         } else {
@@ -88,23 +89,20 @@ function OAuthConsentInner() {
     if (!session?.accessToken) return;
     setProcessing(true);
     try {
-      const res = await fetch(
-        `${API_URL}/oauth/authorize/confirm`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            scope,
-            state,
-            allow,
-          }),
+      const res = await fetch(`${API_URL}/oauth/authorize/confirm`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          scope,
+          state,
+          allow,
+        }),
+      });
       const json = await res.json();
       if (!res.ok || !json.success) {
         toast.error(json.message || "Gagal menyetujui otorisasi");
@@ -124,7 +122,8 @@ function OAuthConsentInner() {
   }
 
   // Display avatar with fallback
-  const displayAvatar = resolveAvatar(avatarUrl) || resolveAvatar(session?.user?.image ?? "") || "";
+  const displayAvatar =
+    resolveAvatar(avatarUrl) || resolveAvatar(session?.user?.image ?? "") || "";
 
   if (status === "loading" || loading)
     return (
@@ -138,7 +137,7 @@ function OAuthConsentInner() {
       <div className="relative min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4 overflow-x-hidden font-sans selection:bg-emerald-100 selection:text-slate-900">
         {/* Canvas background pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-size-[4rem_4rem] opacity-75 pointer-events-none z-0" />
-        
+
         {/* Pastel mesh glowing orbs */}
         <div className="absolute top-[-5%] left-[-5%] w-[45%] h-[45%] rounded-full bg-emerald-200/35 blur-[120px] pointer-events-none z-0 animate-pulse" />
         <div className="absolute bottom-[5%] right-[10%] w-[30%] h-[30%] rounded-full bg-teal-200/20 blur-[100px] pointer-events-none z-0" />
@@ -159,22 +158,24 @@ function OAuthConsentInner() {
               <h3 className="text-slate-900 text-lg font-bold">
                 Aplikasi Tidak Dapat Diakses
               </h3>
-              <p className="text-red-550 text-sm font-semibold mt-1">
-                {error}
-              </p>
+              <p className="text-red-550 text-sm font-semibold mt-1">{error}</p>
             </div>
-            
+
             <CardContent className="p-0 space-y-6">
               <p className="text-slate-500 text-xs text-center leading-relaxed">
-                Aplikasi ini tidak dapat dihubungkan ke akun SSO Anda karena alasan di atas. Silakan hubungi pengelola aplikasi atau administrator SSO.
+                Aplikasi ini tidak dapat dihubungkan ke akun SSO Anda karena
+                alasan di atas. Silakan hubungi pengelola aplikasi atau
+                administrator SSO.
               </p>
-              
+
               <div className="flex gap-3">
                 {redirectUri && (
                   <Button
                     variant="outline"
                     className="flex-1 h-11 border-slate-200 hover:border-slate-300 bg-white/80 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-2xl font-semibold shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
-                    onClick={() => window.location.href = `${redirectUri}?error=access_denied&state=${state}`}
+                    onClick={() =>
+                      (window.location.href = `${redirectUri}?error=access_denied&state=${state}`)
+                    }
                   >
                     Kembali
                   </Button>
@@ -197,7 +198,7 @@ function OAuthConsentInner() {
     <div className="relative min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4 overflow-x-hidden font-sans selection:bg-emerald-100 selection:text-slate-900">
       {/* Canvas background pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-size-[4rem_4rem] opacity-75 pointer-events-none z-0" />
-      
+
       {/* Ambient glowing pastel mesh orbs */}
       <div className="absolute top-[-5%] left-[-5%] w-[45%] h-[45%] rounded-full bg-emerald-200/35 blur-[120px] pointer-events-none z-0 animate-pulse" />
       <div className="absolute top-[25%] right-[-10%] w-[35%] h-[35%] rounded-full bg-teal-200/30 blur-[120px] pointer-events-none z-0" />
@@ -224,7 +225,11 @@ function OAuthConsentInner() {
               Otorisasi Akses
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 px-4 leading-relaxed">
-              Aplikasi <span className="font-bold text-emerald-600">{app?.name ?? clientId}</span> meminta izin untuk terhubung dengan akun SSO Kakak.
+              Aplikasi{" "}
+              <span className="font-bold text-emerald-600">
+                {app?.name ?? clientId}
+              </span>{" "}
+              meminta izin untuk terhubung dengan akun SSO anda.
             </p>
           </div>
         </div>
@@ -272,7 +277,12 @@ function OAuthConsentInner() {
           <CardContent className="p-0 space-y-6">
             {/* Disclaimer */}
             <p className="text-slate-400 text-[11px] text-center leading-relaxed px-2">
-              Dengan mengizinkan, data profil dasar Kakak akan dibagikan ke aplikasi <span className="font-semibold text-slate-700">{app?.name ?? clientId}</span> secara aman.
+              Dengan mengizinkan, data profil dasar anda akan dibagikan ke
+              aplikasi{" "}
+              <span className="font-semibold text-slate-700">
+                {app?.name ?? clientId}
+              </span>{" "}
+              secara aman.
             </p>
 
             {/* Action buttons */}
@@ -294,7 +304,8 @@ function OAuthConsentInner() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <CheckCircle className="w-4.5 h-4.5 mr-1.5 text-white" /> Izinkan
+                    <CheckCircle className="w-4.5 h-4.5 mr-1.5 text-white" />{" "}
+                    Izinkan
                   </>
                 )}
               </Button>

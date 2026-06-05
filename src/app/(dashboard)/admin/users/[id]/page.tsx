@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import UserDetailSkeleton from "./skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowLeft,
@@ -177,17 +177,7 @@ export default function AdminUserDetailPage() {
     return `${API_URL}${url}`;
   }
 
-  if (loading)
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-full rounded-xl" />
-        <Skeleton className="h-px w-full" />
-        <div className="grid grid-cols-2 gap-6">
-          <Skeleton className="h-52 rounded-xl" />
-          <Skeleton className="h-52 rounded-xl" />
-        </div>
-      </div>
-    );
+  if (loading) return <UserDetailSkeleton />;
 
   if (!user)
     return (
