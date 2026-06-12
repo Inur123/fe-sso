@@ -99,6 +99,15 @@ function LoginInner() {
     }
   }, []);
 
+  // Tampilkan toast error jika sesi habis / token expired
+  useEffect(() => {
+    const err = sessionStorage.getItem("login_error");
+    if (err) {
+      sessionStorage.removeItem("login_error");
+      setTimeout(() => toast.error(err), 100);
+    }
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);

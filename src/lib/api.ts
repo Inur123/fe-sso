@@ -32,6 +32,13 @@ async function request<T>(
   const json = await res.json();
 
   if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        const { signOut } = await import("next-auth/react");
+        sessionStorage.setItem("login_error", "Sesi Anda telah berakhir. Silakan login kembali.");
+        signOut({ redirect: true, callbackUrl: "/login" });
+      }
+    }
     throw new Error(json.message || "Terjadi kesalahan");
   }
 
